@@ -55,14 +55,16 @@ void test_neighbors_adjascent(int guest_count, int drink_count, std::chrono::dur
   }
 
   auto start = std::chrono::system_clock::now();
+  auto end_time = start + max_wait;
+
   table.start();
 
-  while (table.get_minimum_drink_count() < 10 &&
-    (std::chrono::system_clock::now() - start) < max_wait)
+  while (table.get_minimum_drink_count() < drink_count && std::chrono::system_clock::now() < end_time)
   {
     // Just let this thread sleep any time it comes up in the scheduling
     // and we aren't done
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    log.log("Current minimum drink count: ", table.get_minimum_drink_count());
   }
 
   if (table.get_minimum_drink_count() < drink_count)
@@ -91,15 +93,16 @@ void test_neighbors_all(int guest_count, int drink_count, std::chrono::duration<
       if (i != j)
         guests[i]->introduce_neighbor(guests[j]);
 
-  auto start = std::chrono::system_clock::now();
-  table.start();
+  auto start_time = std::chrono::system_clock::now();
+  auto end_time = start_time + max_wait;
 
-  while (table.get_minimum_drink_count() < 10 &&
-    (std::chrono::system_clock::now() - start) < max_wait)
+  table.start();
+  while (table.get_minimum_drink_count() < drink_count && std::chrono::system_clock::now() < end_time)
   {
     // Just let this thread sleep any time it comes up in the scheduling
     // and we aren't done
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    log.log("Current minimum drink count: ", table.get_minimum_drink_count());
   }
 
   if (table.get_minimum_drink_count() < drink_count)
@@ -108,7 +111,7 @@ void test_neighbors_all(int guest_count, int drink_count, std::chrono::duration<
     return;
   }
 
-  auto elapsed = std::chrono::system_clock::now() - start;
+  auto elapsed = std::chrono::system_clock::now() - start_time;
   log.log("test_neighbors_adjascent reached the drink count in ",
     std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count(), "ms.");
 }
@@ -121,16 +124,16 @@ int main()
   // Start by making sure two philosophers can negotiate bottle/request
   test_two_philosophers(log);
 
-  // Test with 5 guests - Thinking Drinking maxes out at 250ms,
-  // so 10 drinks shouldn't take longer than 2.5 seconds.  Lets give them 5
-  // to account for thread startup time
-  test_neighbors_adjascent(5, 10, std::chrono::seconds(5), log);
-
+//   // Test with 5 guests - Thinking Drinking maxes out at 250ms,
+//   // so 10 drinks shouldn't take longer than 2.5 seconds.  Lets give them 5
+//   // to account for thread startup time
+//   test_neighbors_adjascent(5, 10, std::chrono::seconds(5), log);
+// 
+//   // Test with 5 guests with all being neighbors
+//   test_neighbors_all(5, 10, std::chrono::seconds(5), log);
+// 
   // Test with 5 guests with all being neighbors
-  test_neighbors_all(5, 10, std::chrono::seconds(5), log);
-
-  // Test with 5 guests with all being neighbors
-  test_neighbors_all(5, 1000000, std::chrono::minutes(1), log);
+  test_neighbors_all(5, 1000000, std::chrono::minutes(15), log);
 
   log.log("Tests Complete.");
 
