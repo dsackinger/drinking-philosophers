@@ -1,9 +1,9 @@
 CC=gcc
 CXX=g++
 RM=rm -f
-CPPFLAGS=-g $(shell root-config --cflags)
-LDFLAGS=-g $(shell root-config --ldflags)
-LDLIBS=$(shell root-config --libs)
+CPPFLAGS=-std=c++11
+LDFLAGS=-g
+LDLIBS=-lpthread
 
 SRCS = \
  main.cpp \
@@ -25,6 +25,7 @@ depend: .depend
 	$(CXX) $(CPPFLAGS) -MM $^>> ./.depend;
 
 clean:
+	$(RM) *.o
 	$(RM) *~ .depend
 
 include .depend
