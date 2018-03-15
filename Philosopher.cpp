@@ -69,11 +69,11 @@ void Philosopher::introduce_neighbor(std::shared_ptr<INeighbor> neighbor)
   // If he doesn't know us yet, he will drop the bottle but will
   // then introduce himself back to us and give us the bottle
   // Forks are assumed dirty until someone drinks
-  bottles_[id] = { false, true, false, true, neighbor };
+  bottles_[id] = { false, true, false, false, neighbor };
 
   // Try to send the neighbor the bottle.  If he doesn't know us
   // yet, he should discard the request.
-  neighbor->send_bottle(id_, true);
+  neighbor->send_bottle(id_, false);
 
   // Introduce ourselves to the other neighbor.  If we were the receiving side,
   // he will recognize us and drop the request
