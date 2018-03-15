@@ -129,6 +129,9 @@ int main()
   // Test with 5 guests with all being neighbors
   test_neighbors_all(5, 10, std::chrono::seconds(5), log);
 
+  // Test with 5 guests with all being neighbors
+  test_neighbors_all(5, 1000000, std::chrono::minutes(1), log);
+
   log.log("Tests Complete.");
 
   return 0;
