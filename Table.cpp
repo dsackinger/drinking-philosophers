@@ -14,6 +14,7 @@
 
 Table::Table(int philosophers, Logger& log)
   : philosophers_()
+  , drink_counts_(philosophers, 0)
   , log_(log)
 {
   for (int i = 0; i < philosophers; i++)
@@ -27,22 +28,51 @@ void Table::start()
     philosopher->start();
 }
 
+// IDrinkListener interface
+void Table::report_drink(int id)
+{
+  if (id < 0 || id > drink_counts_.size())
+    return;
+
+  drink_counts_[id]++;
+}
+
+bool Table::wait_for_minimum_drink_count(int drink_minimum, long long max_wait_ms)
+{
+  if (drink_counts_.empty())
+  {
+    log_.log("Trying to wait with no registered drinkers.");
+    return false;
+  }
+
+  auto start_time = std::chrono::system_clock::now();
+  auto end_time = start_time + std::chrono::milliseconds(max_wait_ms);
+
+  while (std::chrono::system_clock::now() < end_time)
+  {
+    if (get_minimum_drink_count() >= drink_minimum)
+      return true;
+
+    // OK... Sleep for a bit at try again
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  // Didn't crest the drink minimum
+  return false;
+}
+
 std::size_t Table::get_minimum_drink_count() const
 {
-  if (philosophers_.empty())
+  if (drink_counts_.empty())
     return 0;
 
   // Start with the first guy
-  std::size_t min_drinks = philosophers_[0]->get_drink_count();
+  std::size_t min_drinks = drink_counts_[0];
 
   // Look to see if anyone is lower
-  for (auto const & philosopher : philosophers_)
-  {
-    auto count = philosopher->get_drink_count();
-
-    if (count < min_drinks)
-      min_drinks = count;
-  }
+  for (std::size_t i = 1; i < drink_counts_.size(); i++)
+    if (drink_counts_[i] < min_drinks)
+      min_drinks = drink_counts_[i];
 
   return min_drinks;
 }

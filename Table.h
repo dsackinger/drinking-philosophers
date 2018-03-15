@@ -20,6 +20,7 @@
 #include <vector>
 
 class Table
+  : public IDrinkListener
 {
 public:
   typedef std::vector<std::shared_ptr<Philosopher>> philosopher_vector_t;
@@ -33,9 +34,16 @@ public:
   philosopher_vector_t& get_philosophers() { return philosophers_; };
   std::size_t get_minimum_drink_count() const;
 
+  bool wait_for_minimum_drink_count(int drink_minimum, long long max_wait_ms);
+
+public:
+  // IDrinkListener interface
+  void report_drink(int id) override;
+
 private:
   // This vector contains our philosophers.  Each behaves on its own
   philosopher_vector_t philosophers_;
+  std::vector<std::size_t> drink_counts_;
 
   Logger& log_;
 };

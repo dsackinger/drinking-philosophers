@@ -14,6 +14,8 @@
 #include "Philosopher.h"
 #include "Table.h"
 
+#include <iostream>
+
 void test_two_philosophers(Logger& log)
 {
   log.log("Testing two philosophers");
@@ -40,100 +42,85 @@ void test_two_philosophers(Logger& log)
 }
 
 template<typename Rep, typename Period>
-void test_neighbors_adjascent(int guest_count, int drink_count, std::chrono::duration<Rep, Period> max_wait, Logger& log)
+void run_test(int guest_count, int drink_count, bool ring, std::chrono::duration<Rep, Period> max_wait, Logger& log)
 {
-  log.log("Starting test: test_neighbors_adjascent");
-  // Set the guests at the table
-  Table table(5, log);
-
-  // Now introduce all philosophers to their neighbors
-  std::vector<std::shared_ptr<Philosopher>>& guests = table.get_philosophers();
-  for (std::size_t i = 1; i < guests.size(); i++)
-  {
-    guests[i]->introduce_neighbor(guests[i - 1]);
-    guests[i]->introduce_neighbor(guests[(i + 1) % guests.size()]);
-  }
-
-  auto start = std::chrono::system_clock::now();
-  auto end_time = start + max_wait;
-
-  table.start();
-
-  while (table.get_minimum_drink_count() < drink_count && std::chrono::system_clock::now() < end_time)
-  {
-    // Just let this thread sleep any time it comes up in the scheduling
-    // and we aren't done
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    log.log("Current minimum drink count: ", table.get_minimum_drink_count());
-  }
-
-  if (table.get_minimum_drink_count() < drink_count)
-  {
-    log.log("test_neighbors_adjascent failed to reach the drink count requirement.");
-    return;
-  }
-
-  auto elapsed = std::chrono::system_clock::now() - start;
-  log.log("test_neighbors_adjascent reached the drink count in ",
-    std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count(), "ms.");
-}
-
-template<typename Rep, typename Period>
-void test_neighbors_all(int guest_count, int drink_count, std::chrono::duration<Rep, Period> max_wait, Logger& log)
-{
-  log.log("Starting test: test_neighbors_all");
+  log.log("Starting test.");
+  log.log("Philosophers: ", guest_count);
+  log.log("drink_count: ", drink_count);
+  log.log("configuration: ", (ring ? "ring" : "all"));
 
   // Set the guests at the table
-  Table table(5, log);
+  Table table(guest_count, log);
 
   // Now introduce all philosophers to their neighbors
   auto& guests = table.get_philosophers();
-  for (std::size_t i = 1; i < guests.size(); i++)
-    for (std::size_t j = 0; j < guests.size(); j++)
-      if (i != j)
-        guests[i]->introduce_neighbor(guests[j]);
 
-  auto start_time = std::chrono::system_clock::now();
-  auto end_time = start_time + max_wait;
-
-  table.start();
-  while (table.get_minimum_drink_count() < drink_count && std::chrono::system_clock::now() < end_time)
+  if (ring)
   {
-    // Just let this thread sleep any time it comes up in the scheduling
-    // and we aren't done
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    log.log("Current minimum drink count: ", table.get_minimum_drink_count());
+    for (std::size_t i = 1; i < guests.size(); i++)
+    {
+      guests[i]->introduce_neighbor(guests[i - 1]);
+      guests[i]->introduce_neighbor(guests[(i + 1) % guests.size()]);
+    }
+  }
+  else // all configuration
+  {
+    for (std::size_t i = 1; i < guests.size(); i++)
+      for (std::size_t j = 0; j < guests.size(); j++)
+        if (i != j)
+          guests[i]->introduce_neighbor(guests[j]);
   }
 
-  if (table.get_minimum_drink_count() < drink_count)
+  auto start_time = std::chrono::system_clock::now();
+
+  table.start();
+  bool success = table.wait_for_minimum_drink_count(drink_count,
+    std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::minutes(5)).count());
+
+  if (!success)
   {
-    log.log("test_neighbors_adjascent failed to reach the drink count requirement.");
+    log.log("Failed to reach the drink count requirement.");
     return;
   }
 
   auto elapsed = std::chrono::system_clock::now() - start_time;
-  log.log("test_neighbors_adjascent reached the drink count in ",
+  log.log("Reached the drink count in ",
     std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count(), "ms.");
 }
 
-int main()
+int main(int argc, const char * argv[])
 {
-  Logger log;
-  log.log("Beginning tests....");
+  if (argc < 3)
+  {
+    std::cout << "Usage: philo <philosophers> <drink_count> [all | ring]" << std::endl
+      << "  philosophers - must specify at least 2 philosophers" << std::endl
+      << "  drink_count - minimum number of drinks before exiting (5 minute limit)" << std::endl
+      << std::endl
+      << "  all  - philosophers coordinate with all neighbors" << std::endl
+      << "  ring - philosophers only coordinate with adjacent neighbors" << std::endl;
 
+    return 0;
+  }
+
+  int philosophers = ::atoi(argv[1]);
+  int drink_count = ::atoi(argv[2]);
+
+  bool ring = false;
+
+  if (argc >= 3)
+  {
+    std::string arg = argv[2];
+    ring = (arg.compare("ring"));
+  }
+
+  Logger log;
   // Start by making sure two philosophers can negotiate bottle/request
   test_two_philosophers(log);
 
-//   // Test with 5 guests - Thinking Drinking maxes out at 250ms,
-//   // so 10 drinks shouldn't take longer than 2.5 seconds.  Lets give them 5
-//   // to account for thread startup time
-//   test_neighbors_adjascent(5, 10, std::chrono::seconds(5), log);
-// 
-//   // Test with 5 guests with all being neighbors
-//   test_neighbors_all(5, 10, std::chrono::seconds(5), log);
-// 
-  // Test with 5 guests with all being neighbors
-  test_neighbors_all(5, 1000000, std::chrono::minutes(15), log);
+  log.log("Beginning tests....");
+
+  // Run the test
+  run_test(philosophers, drink_count, ring, std::chrono::minutes(5), log);
 
   log.log("Tests Complete.");
 

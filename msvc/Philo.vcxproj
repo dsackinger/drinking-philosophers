@@ -151,6 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\IDrinkListener.h" />
     <ClInclude Include="..\INeighbor.h" />
     <ClInclude Include="..\Logger.h" />
     <ClInclude Include="..\Philosopher.h" />

@@ -14,6 +14,7 @@
 #define __PHILOSOPHER_H__
 
 #include "INeighbor.h"
+#include "IDrinkListener.h"
 #include "Logger.h"
 
 #include <atomic>
@@ -42,12 +43,11 @@ public:
   typedef std::map<int, bottle_state_t> bottle_state_map_t;
 
 public:
-  Philosopher(int id, Logger& log);
+  Philosopher(int id, Logger& log, IDrinkListener * listener = nullptr);
   virtual ~Philosopher();
 
 public:
   void start();
-  std::size_t get_drink_count() const { return drink_count_; };
   void quit();
 
 public:
@@ -73,7 +73,7 @@ private:
   bottle_state_map_t bottles_;
   std::mutex bottles_lock_;
 
-  std::atomic<std::size_t> drink_count_;
+  IDrinkListener * listener_;
 
   // To ensure a fair start
   std::atomic<bool> start_;

@@ -15,11 +15,11 @@
 #include <vector>
 
 // Start all philosophers in state of tranquil
-Philosopher::Philosopher(int id, Logger& log)
+Philosopher::Philosopher(int id, Logger& log, IDrinkListener * listener)
   : id_(id)
   , state_(tranquil)
   , bottles_()
-  , drink_count_(0)
+  , listener_(listener)
   , log_(log)
   , quit_(false)
   , start_(false)
@@ -230,8 +230,9 @@ void Philosopher::on_drinking()
   // We are in the drinking state.  Lets drink for a set time and change our state
   log_.log("Philosopher[", id_, "] is drinking.");
 
-  // We are done drinking.  Increment our drink count
-  drink_count_++;
+  // Let the listener know we are taking a drink
+  if (listener_)
+    listener_->report_drink(id_);
 
   { // Scope for lock
     std::unique_lock<std::mutex> lock(bottles_lock_);
