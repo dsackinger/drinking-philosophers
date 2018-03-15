@@ -1,18 +1,25 @@
-// Declaration of Philosopher
+//////////////////////////////////////////////////////////////////////////
+// Philosopher.h
+//
+// Copyright (C) 2018 Dan Sackinger - All Rights Reserved
+// You may use, distribute and modify this code under the
+// terms of the MIT license.
+//
+// Philosopher declaration:
+//  This is the main actor in the Drinking Philosopher
+//  solution.
 //
 
-#pragma once
+#if !defined(__PHILOSOPHER_H__)
+#define __PHILOSOPHER_H__
 
 #include "INeighbor.h"
-
 #include "Logger.h"
 
 #include <atomic>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <thread>
-#include <vector>
 
 class Philosopher
   : public std::enable_shared_from_this<Philosopher>
@@ -77,3 +84,4 @@ private:
   Philosopher(const Philosopher&& rhs) = delete;
 };
 
+#endif // #if !defined(__PHILOSOPHER_H__)

@@ -158,9 +158,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Logger.cpp" />
-    <ClCompile Include="..\Philo.cpp" />
+    <ClCompile Include="..\main.cpp" />
     <ClCompile Include="..\Philosopher.cpp" />
     <ClCompile Include="..\Table.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

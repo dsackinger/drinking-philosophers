@@ -1,4 +1,12 @@
-// Logger implementation
+//////////////////////////////////////////////////////////////////////////
+// Logger.cpp
+//
+// Copyright (C) 2018 Dan Sackinger - All Rights Reserved
+// You may use, distribute and modify this code under the
+// terms of the MIT license.
+//
+// Implementation of the logger class
+//
 
 #include "Logger.h"
 
@@ -15,3 +23,4 @@ void Logger::log(const std::string& message)
   time_string[time_string.length() - 1] = '\0';
   std::cout << time_string << " | " << message.c_str() << std::endl;
 }
+

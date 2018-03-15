@@ -1,7 +1,19 @@
-// Declaration of Table class
+//////////////////////////////////////////////////////////////////////////
+// Table.h
+//
+// Copyright (C) 2018 Dan Sackinger - All Rights Reserved
+// You may use, distribute and modify this code under the
+// terms of the MIT license.
+//
+// Table declaration:
+//  This is a simple container for holding a group of
+//  Philosopher objects.  Probably the most important
+//  part is the utility function to figure out the lowest
+//  number of drinks of anyone at the group
 //
 
-#pragma once
+#if !defined(__TABLE_H__)
+#define __TABLE_H__
 
 #include "Philosopher.h"
 
@@ -14,7 +26,7 @@ public:
 
 public:
   Table(int philosophers, Logger& log);
-  ~Table();
+  virtual ~Table() = default;
 
   philosopher_vector_t& get_philosophers() { return philosophers_; };
   std::size_t get_minimum_drink_count() const;
@@ -25,3 +37,5 @@ private:
 
   Logger& log_;
 };
+
+#endif // #if !defined(__TABLE_H__)

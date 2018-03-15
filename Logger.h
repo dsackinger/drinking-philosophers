@@ -1,7 +1,17 @@
-// Logger declaration
+//////////////////////////////////////////////////////////////////////////
+// Logger.h
+//
+// Copyright (C) 2018 Dan Sackinger - All Rights Reserved
+// You may use, distribute and modify this code under the
+// terms of the MIT license.
+//
+// Logger declaration:
+//  This is a simple logger that unpacks arguments and
+//  dumps them to cout
 //
 
-#pragma once
+#if !defined(__LOGGER_H__)
+#define __LOGGER_H__
 
 #include <mutex>
 #include <sstream>
@@ -38,7 +48,7 @@ private:
     os << final;
   }
 
-  // Expands to account for all types
+  // Expands to account for all types that can be output to a stream
   template<typename T, typename... Args>
   void log(std::stringstream& os, T current, Args... next)
   {
@@ -58,3 +68,4 @@ private:
   Logger& operator =(const Logger& rhs) = delete;
 };
 
+#endif // #if !defined(__LOGGER_H__)

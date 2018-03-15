@@ -1,10 +1,18 @@
-// INeighbor interface
+//////////////////////////////////////////////////////////////////////////
+// INeighbor.h
 //
-// This interface is implemented by a Philosopher and is used for one philosopher to
-// communicate with the other
+// Copyright (C) 2018 Dan Sackinger - All Rights Reserved
+// You may use, distribute and modify this code under the
+// terms of the MIT license.
+//
+// INeighbor interface:
+//  This interface is implemented by a Philosopher and is used for one
+//  philosopher to communicate with the other.  In a real world solution,
+//  this would be replaced with a communications layer
 //
 
-#pragma once
+#if !defined(__INEIGHBOR_H__)
+#define __INEIGHBOR_H__
 
 #include <memory>
 
@@ -23,3 +31,5 @@ public:
   virtual bool has_bottle(int id) = 0;
   virtual bool has_request(int id) = 0;
 };
+
+#endif // #if !defined(__INEIGHBOR_H__)

@@ -1,4 +1,13 @@
+//////////////////////////////////////////////////////////////////////////
+// Philosopher.cpp
+//
+// Copyright (C) 2018 Dan Sackinger - All Rights Reserved
+// You may use, distribute and modify this code under the
+// terms of the MIT license.
+//
 // Implementation of the Philosopher class
+//  This implements the specification found at:
+//  https://www.cs.utexas.edu/users/misra/scannedPdf.dir/DrinkingPhil.pdf
 //
 
 #include "Philosopher.h"

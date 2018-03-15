@@ -1,9 +1,13 @@
-// Table implementation
+//////////////////////////////////////////////////////////////////////////
+// Table.cpp
 //
-// State Transitions:
-//  tranquil => thirsty
-//  thirsty => drinking
-//  drinking => tranquil
+// Copyright (C) 2018 Dan Sackinger - All Rights Reserved
+// You may use, distribute and modify this code under the
+// terms of the MIT license.
+//
+// Implementation of the Table class
+//  This is mainly a container for Philosophers and
+//  contains utility functions to work with them.
 //
 
 #include "Table.h"
@@ -15,12 +19,6 @@ Table::Table(int philosophers, Logger& log)
   for (int i = 0; i < philosophers; i++)
     philosophers_.emplace_back(std::make_shared<Philosopher>(i, log_));
 }
-
-Table::~Table()
-{
-
-}
-
 
 std::size_t Table::get_minimum_drink_count() const
 {
@@ -41,3 +39,4 @@ std::size_t Table::get_minimum_drink_count() const
 
   return min_drinks;
 }
+
