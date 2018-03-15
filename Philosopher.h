@@ -85,3 +85,4 @@ private:
 };
 
 #endif // #if !defined(__PHILOSOPHER_H__)
+

@@ -69,3 +69,4 @@ private:
 };
 
 #endif // #if !defined(__LOGGER_H__)
+

@@ -33,3 +33,4 @@ public:
 };
 
 #endif // #if !defined(__INEIGHBOR_H__)
+
