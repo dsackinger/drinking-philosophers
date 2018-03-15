@@ -27,7 +27,7 @@ public:
 
 public:
   Table(int philosophers, Logger& log);
-  virtual ~Table() = default;
+  virtual ~Table();
 
   void start();
 

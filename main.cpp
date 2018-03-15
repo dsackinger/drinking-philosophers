@@ -107,9 +107,9 @@ int main(int argc, const char * argv[])
 
   bool ring = false;
 
-  if (argc >= 3)
+  if (argc > 3)
   {
-    std::string arg = argv[2];
+    std::string arg = argv[3];
     ring = (arg.compare("ring"));
   }
 

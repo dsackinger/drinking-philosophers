@@ -18,7 +18,15 @@ Table::Table(int philosophers, Logger& log)
   , log_(log)
 {
   for (int i = 0; i < philosophers; i++)
-    philosophers_.emplace_back(std::make_shared<Philosopher>(i, log_));
+    philosophers_.emplace_back(std::make_shared<Philosopher>(i, log_, this));
+}
+
+Table::~Table()
+{
+  // Must make sure to disconnect the philosophers so they don't try
+  // to call us before they are destroyed
+  for (auto& philosopher : philosophers_)
+    philosopher->set_listener(nullptr);
 }
 
 void Table::start()

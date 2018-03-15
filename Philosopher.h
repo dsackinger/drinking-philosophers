@@ -47,6 +47,7 @@ public:
   virtual ~Philosopher();
 
 public:
+  void set_listener(IDrinkListener * listener) { listener_ = listener; };
   void start();
   void quit();
 
