@@ -12,6 +12,8 @@
 
 #include "Philosopher.h"
 
+#include <vector>
+
 // Start all philosophers in state of tranquil
 Philosopher::Philosopher(int id, Logger& log)
   : id_(id)
@@ -89,6 +91,8 @@ void Philosopher::introduce_neighbor(std::shared_ptr<INeighbor> neighbor)
 
 void Philosopher::send_bottle(int sender_id, bool dirty)
 {
+  std::unique_lock<std::mutex> lock(bottles_lock_);
+
   // Here we are receiving the request from a neighbor
 
   // (R4) Receive a Bottle:
@@ -106,6 +110,7 @@ void Philosopher::send_bottle(int sender_id, bool dirty)
 
 void Philosopher::send_request(int sender_id)
 {
+  std::unique_lock<std::mutex> lock(bottles_lock_);
   // Here we are receiving the request token from a neighbor
 
   // (R3) Receive Request for a Bottle:
@@ -122,6 +127,7 @@ void Philosopher::send_request(int sender_id)
 
 bool Philosopher::has_bottle(int id)
 {
+  std::unique_lock<std::mutex> lock(bottles_lock_);
   // Look up the bottle record
   auto entry = bottles_.find(id);
   return (entry != bottles_.end() && entry->second.bot);
@@ -129,6 +135,7 @@ bool Philosopher::has_bottle(int id)
 
 bool Philosopher::has_request(int id)
 {
+  std::unique_lock<std::mutex> lock(bottles_lock_);
   // Look up the bottle record
   auto entry = bottles_.find(id);
   return (entry != bottles_.end() && entry->second.reqb);
@@ -146,45 +153,64 @@ void Philosopher::on_tranquil()
   // Transition to being thirsty
   state_ = thirsty;
 
-  // Mark all bottles as needed in order to drink
-  for (auto& entry : bottles_)
-    entry.second.need = true;
+  { // Scope for lock
+    std::unique_lock<std::mutex> lock(bottles_lock_);
+
+    // Mark all bottles as needed in order to drink
+    for (auto& entry : bottles_)
+      entry.second.need = true;
+  }
 }
 
 void Philosopher::on_thirsty()
 {
-  // See if we need to send any requests
-  for (auto& bottle_entry : bottles_)
-  {
-    auto id = bottle_entry.first;
-    auto& bottle = bottle_entry.second;
+  std::vector<std::shared_ptr<INeighbor>> requests;
 
-    // (R1) Request a Bottle:
-    //   thirsty, need(b), reqb(b), ~bot(b) -> Send request for bottle B
-    //   reqb(b) := false
-    if (bottle.need && bottle.reqb && !bottle.bot)
+  { // Scope for lock
+    std::unique_lock<std::mutex> lock(bottles_lock_);
+
+    // See if we need to send any requests
+    for (auto& bottle_entry : bottles_)
     {
-      auto neighbor = bottle.neighbor.lock();
-      if (!neighbor)
-      {
-        // Neighbor has disappeared on us.  We should just remove this bottle.
-        // For now, mark it as not needed
-        bottle.need = false;
-        continue;
-      }
+      auto id = bottle_entry.first;
+      auto& bottle = bottle_entry.second;
 
-      neighbor->send_request(id_);
-      bottle.reqb = false;
+      // (R1) Request a Bottle:
+      //   thirsty, need(b), reqb(b), ~bot(b) -> Send request for bottle B
+      //   reqb(b) := false
+      if (bottle.need && bottle.reqb && !bottle.bot)
+      {
+        auto neighbor = bottle.neighbor.lock();
+        if (!neighbor)
+        {
+          // Neighbor has disappeared on us.  We should just remove this bottle.
+          // For now, mark it as not needed
+          bottle.need = false;
+          continue;
+        }
+
+        requests.push_back(neighbor);
+        bottle.reqb = false;
+      }
     }
   }
 
-  // If we find any bottles that we need but do not have, we
-  // cannot move into a drinking state
-  for (auto& bottle_entry : bottles_)
-  {
-    auto& bottle = bottle_entry.second;
-    if (bottle.need && !bottle.bot)
-      return;
+  // Sending requests has to be done outside of the lock
+  // to avoid deadlocks
+  for (auto neighbor : requests)
+    neighbor->send_request(id_);
+
+  { // Scope for lock
+    std::unique_lock<std::mutex> lock(bottles_lock_);
+
+    // If we find any bottles that we need but do not have, we
+    // cannot move into a drinking state
+    for (auto& bottle_entry : bottles_)
+    {
+      auto& bottle = bottle_entry.second;
+      if (bottle.need && !bottle.bot)
+        return;
+    }
   }
 
   // We have all bottles.  Move to a drinking state
@@ -199,13 +225,18 @@ void Philosopher::on_drinking()
   // We are done drinking.  Increment our drink count
   drink_count_++;
 
-  // We no longer need any of the bottles as we have finished our drinking
-  // Make sure to clean any forks as we are done drinking
-  for (auto& entry : bottles_)
-  {
-    auto& bottle = entry.second;
-    bottle.need = false;
-    bottle.dirty = false;
+  { // Scope for lock
+    std::unique_lock<std::mutex> lock(bottles_lock_);
+
+    // We no longer need any of the bottles as we have finished our drinking
+    // Make sure to clean any forks as we are done drinking
+    for (auto& entry : bottles_)
+    {
+      auto& bottle = entry.second;
+      bottle.need = false;
+      bottle.dirty = false;
+    }
+
   }
 
   // Done drinking.  Change states
@@ -215,30 +246,46 @@ void Philosopher::on_drinking()
 // This function checks to see if we have any bottles to send to requesters
 void Philosopher::check_bottle_requests()
 {
-  // See if we need to give any bottles
-  for (auto& bottle_entry : bottles_)
-  {
-    // (R2) Send a bottle:
-    //    reqb(b), bot(b), ~[need(b) and (drinking or fork(f))] ->
-    //    send bottle b;
-    //    bot(b) := false
-    auto id = bottle_entry.first;
-    auto& bottle = bottle_entry.second;
-    if (bottle.reqb && bottle.bot
-      && !(bottle.need && (state_ == drinking || !bottle.dirty)))
-    {
-      // We need to send the bottle
-      auto neighbor = bottle.neighbor.lock();
-      if (!neighbor)
-      {
-        // Neighbor has disappeared on us.  For now, mark it unneeded
-        bottle.need = false;
-        continue;
-      }
+  typedef std::pair<std::shared_ptr<INeighbor>, bool> request_pair_t;
+  std::vector<request_pair_t> requests;
 
-      neighbor->send_bottle(id_, bottle.dirty);
-      bottle.bot = false;
+  { // Scope for lock
+    std::unique_lock<std::mutex> lock(bottles_lock_);
+
+    // See if we need to give any bottles
+    for (auto& bottle_entry : bottles_)
+    {
+      // (R2) Send a bottle:
+      //    reqb(b), bot(b), ~[need(b) and (drinking or fork(f))] ->
+      //    send bottle b;
+      //    bot(b) := false
+      auto id = bottle_entry.first;
+      auto& bottle = bottle_entry.second;
+      if (bottle.reqb && bottle.bot
+        && !(bottle.need && (state_ == drinking || !bottle.dirty)))
+      {
+        // We need to send the bottle
+        auto neighbor = bottle.neighbor.lock();
+        if (!neighbor)
+        {
+          // Neighbor has disappeared on us.  For now, mark it unneeded
+          bottle.need = false;
+          continue;
+        }
+
+        requests.push_back(request_pair_t(neighbor, bottle.dirty));
+        bottle.bot = false;
+      }
     }
+  }
+
+  // All sending should be done when not holding the lock
+  // to avoid deadlocks
+  for (auto& entry : requests)
+  {
+    auto& neighbor = entry.first;
+    auto& dirty = entry.second;
+    neighbor->send_bottle(id_, dirty);
   }
 }
 

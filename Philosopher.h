@@ -19,6 +19,7 @@
 #include <atomic>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <thread>
 
 class Philosopher
@@ -68,6 +69,7 @@ private:
   int id_;
   bottle_state state_;
   bottle_state_map_t bottles_;
+  std::mutex bottles_lock_;
 
   std::atomic<std::size_t> drink_count_;
 
