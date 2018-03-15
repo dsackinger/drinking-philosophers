@@ -33,7 +33,7 @@ public:
 
   struct bottle_state_t
   {
-    bool bot;   // Do we hold the bottle
+    bool bot;   // Do we hold the bottle (and fork)
     bool reqb;  // Do we hold the request token for the bottle
     bool need;  // Do we need the bottle
     bool dirty; // Is the fork clean

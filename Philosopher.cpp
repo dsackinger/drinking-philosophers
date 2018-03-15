@@ -156,13 +156,21 @@ void Philosopher::on_tranquil()
   // takes a consistent time to complete.  For now, lets just
   // yield to make sure other threads get a chance and then let
   // the transition to thirsty take place.
-  std::this_thread::yield();
+
+  // If we were going to wait a longer time, we would need to
+  // service the check_bottle_requests().  Ideally,
+  // check_bottle_requests() would be on a background thread.
 
   // Transition to being thirsty
   state_ = thirsty;
 
   { // Scope for lock
     std::unique_lock<std::mutex> lock(bottles_lock_);
+
+    // To fully implement the specification, we would allow
+    // a variable subset of the bottles to be needed at any
+    // time.  For this simple test, just request all the
+    // bottles
 
     // Mark all bottles as needed in order to drink
     for (auto& entry : bottles_)
@@ -321,7 +329,8 @@ void Philosopher::work()
     check_bottle_requests();
 
     // Give other threads a chance to run
-    std::this_thread::yield();
+    if (state_ == old_state)
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 
   log_.log("Philosopher[", id_, "] is exiting.");
