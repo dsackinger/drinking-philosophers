@@ -17,6 +17,7 @@
 #include "Logger.h"
 
 #include <atomic>
+#include <condition_variable>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -45,6 +46,7 @@ public:
   virtual ~Philosopher();
 
 public:
+  void start();
   std::size_t get_drink_count() const { return drink_count_; };
   void quit();
 
@@ -72,6 +74,11 @@ private:
   std::mutex bottles_lock_;
 
   std::atomic<std::size_t> drink_count_;
+
+  // To ensure a fair start
+  std::atomic<bool> start_;
+  std::mutex start_lock_;
+  std::condition_variable start_cv_;
 
   Logger& log_;
   std::atomic<bool> quit_;

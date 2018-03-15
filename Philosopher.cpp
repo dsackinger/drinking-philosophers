@@ -22,6 +22,7 @@ Philosopher::Philosopher(int id, Logger& log)
   , drink_count_(0)
   , log_(log)
   , quit_(false)
+  , start_(false)
   , worker_(std::thread(&Philosopher::work, this))
 {
   // Initialize the randomizer
@@ -31,6 +32,13 @@ Philosopher::Philosopher(int id, Logger& log)
 Philosopher::~Philosopher()
 {
   quit();
+}
+
+void Philosopher::start()
+{
+  std::unique_lock<std::mutex> lock(start_lock_);
+  start_ = true;
+  start_cv_.notify_all();
 }
 
 void Philosopher::quit()
@@ -290,6 +298,11 @@ void Philosopher::check_bottle_requests()
 
 void Philosopher::work()
 {
+  std::unique_lock<std::mutex> lock(start_lock_);
+  
+  while (!start_ && !quit_)
+    start_cv_.wait_for(lock, std::chrono::milliseconds(100));
+
   log_.log("Philosopher[", id_, "] is starting.");
 
   std::map<bottle_state, std::function<void()>> state_map = {

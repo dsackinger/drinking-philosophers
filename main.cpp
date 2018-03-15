@@ -48,7 +48,6 @@ void test_neighbors_adjascent(int guest_count, int drink_count, std::chrono::dur
 
   // Now introduce all philosophers to their neighbors
   std::vector<std::shared_ptr<Philosopher>>& guests = table.get_philosophers();
-
   for (std::size_t i = 1; i < guests.size(); i++)
   {
     guests[i]->introduce_neighbor(guests[i - 1]);
@@ -56,6 +55,8 @@ void test_neighbors_adjascent(int guest_count, int drink_count, std::chrono::dur
   }
 
   auto start = std::chrono::system_clock::now();
+  table.start();
+
   while (table.get_minimum_drink_count() < 10 &&
     (std::chrono::system_clock::now() - start) < max_wait)
   {
@@ -85,13 +86,14 @@ void test_neighbors_all(int guest_count, int drink_count, std::chrono::duration<
 
   // Now introduce all philosophers to their neighbors
   auto& guests = table.get_philosophers();
-
   for (std::size_t i = 1; i < guests.size(); i++)
     for (std::size_t j = 0; j < guests.size(); j++)
       if (i != j)
         guests[i]->introduce_neighbor(guests[j]);
 
   auto start = std::chrono::system_clock::now();
+  table.start();
+
   while (table.get_minimum_drink_count() < 10 &&
     (std::chrono::system_clock::now() - start) < max_wait)
   {

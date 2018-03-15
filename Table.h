@@ -28,6 +28,8 @@ public:
   Table(int philosophers, Logger& log);
   virtual ~Table() = default;
 
+  void start();
+
   philosopher_vector_t& get_philosophers() { return philosophers_; };
   std::size_t get_minimum_drink_count() const;
 

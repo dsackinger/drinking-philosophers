@@ -20,6 +20,13 @@ Table::Table(int philosophers, Logger& log)
     philosophers_.emplace_back(std::make_shared<Philosopher>(i, log_));
 }
 
+void Table::start()
+{
+  // Walk through the philosophers_ and tell them all to start
+  for (auto& philosopher : philosophers_)
+    philosopher->start();
+}
+
 std::size_t Table::get_minimum_drink_count() const
 {
   if (philosophers_.empty())
