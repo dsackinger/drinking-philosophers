@@ -234,10 +234,9 @@ void Philosopher::on_drinking()
     {
       auto& bottle = entry.second;
       bottle.need = false;
-      bottle.dirty = false;
+      bottle.dirty = true;
     }
-
-  }
+  }  // Scope for lock
 
   // Done drinking.  Change states
   state_ = tranquil;
@@ -246,8 +245,7 @@ void Philosopher::on_drinking()
 // This function checks to see if we have any bottles to send to requesters
 void Philosopher::check_bottle_requests()
 {
-  typedef std::pair<std::shared_ptr<INeighbor>, bool> request_pair_t;
-  std::vector<request_pair_t> requests;
+  std::vector<std::shared_ptr<INeighbor>> requests;
 
   { // Scope for lock
     std::unique_lock<std::mutex> lock(bottles_lock_);
@@ -273,20 +271,20 @@ void Philosopher::check_bottle_requests()
           continue;
         }
 
-        requests.push_back(request_pair_t(neighbor, bottle.dirty));
+        requests.push_back(neighbor);
         bottle.bot = false;
+
+        // Always clean the fork before sending the bottle
+        bottle.dirty = false;
       }
     }
   }
 
   // All sending should be done when not holding the lock
   // to avoid deadlocks
-  for (auto& entry : requests)
-  {
-    auto& neighbor = entry.first;
-    auto& dirty = entry.second;
-    neighbor->send_bottle(id_, dirty);
-  }
+  // Always send clean forks
+  for (auto& neighbor : requests)
+    neighbor->send_bottle(id_, false);
 }
 
 
