@@ -62,7 +62,7 @@ void test_neighbors_adjascent(int guest_count, int drink_count, std::chrono::dur
   {
     // Just let this thread sleep any time it comes up in the scheduling
     // and we aren't done
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 
   if (table.get_minimum_drink_count() < drink_count)
@@ -99,7 +99,7 @@ void test_neighbors_all(int guest_count, int drink_count, std::chrono::duration<
   {
     // Just let this thread sleep any time it comes up in the scheduling
     // and we aren't done
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
   }
 
   if (table.get_minimum_drink_count() < drink_count)
