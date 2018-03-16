@@ -42,7 +42,7 @@ void test_two_philosophers(Logger& log)
 }
 
 template<typename Rep, typename Period>
-void run_test(int guest_count, int drink_count, bool ring, std::chrono::duration<Rep, Period> max_wait, Logger& log)
+void run_test(int guest_count, int drink_count, bool ring, bool wait, std::chrono::duration<Rep, Period> max_wait, Logger& log)
 {
   log.log("Starting test.");
   log.log("Philosophers: ", guest_count);
@@ -54,6 +54,11 @@ void run_test(int guest_count, int drink_count, bool ring, std::chrono::duration
 
   // Now introduce all philosophers to their neighbors
   auto& guests = table.get_philosophers();
+
+  // Do we tell the quests to wait?
+  if (wait)
+    for (auto& guest : guests)
+      guest->set_wait(true);
 
   if (ring)
   {
@@ -92,12 +97,13 @@ int main(int argc, const char * argv[])
 {
   if (argc < 3)
   {
-    std::cout << "Usage: philo <philosophers> <drink_count> [all | ring]" << std::endl
+    std::cout << "Usage: philo <philosophers> <drink_count> [all | ring] [wait]" << std::endl
       << "  philosophers - must specify at least 2 philosophers" << std::endl
       << "  drink_count - minimum number of drinks before exiting (5 minute limit)" << std::endl
       << std::endl
       << "  all  - philosophers coordinate with all neighbors" << std::endl
-      << "  ring - philosophers only coordinate with adjacent neighbors" << std::endl;
+      << "  ring - philosophers only coordinate with adjacent neighbors" << std::endl
+      << "  wait - philosopher will be tranquil between 5 and 25 ms after eating" << std::endl;
 
     return 0;
   }
@@ -106,12 +112,23 @@ int main(int argc, const char * argv[])
   int drink_count = ::atoi(argv[2]);
 
   bool ring = false;
+  bool wait = false;
 
-  if (argc >= 4)
+  // Would normally use get_opt or a cross platform version like boost Program_options
+  for (int i = 3; i < argc; i++)
   {
-    std::string arg = argv[3];
-    ring = (arg == "ring");
+    std::string arg = argv[i];
+
+    if (arg == "ring")
+      ring = true;
+    else if (arg == "all")
+      ring = false;
+    else if (arg == "wait")
+      wait = true;
   }
+
+  // Initialize our randomizer
+  std::srand(static_cast<int>(std::chrono::system_clock::now().time_since_epoch().count()));
 
   Logger log;
   // Start by making sure two philosophers can negotiate bottle/request
@@ -120,7 +137,7 @@ int main(int argc, const char * argv[])
   log.log("Beginning tests....");
 
   // Run the test
-  run_test(philosophers, drink_count, ring, std::chrono::minutes(5), log);
+  run_test(philosophers, drink_count, ring, wait, std::chrono::minutes(5), log);
 
   log.log("Tests Complete.");
 

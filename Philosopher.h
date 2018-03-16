@@ -47,7 +47,8 @@ public:
   virtual ~Philosopher();
 
 public:
-  void set_listener(IDrinkListener * listener) { listener_ = listener; };
+  inline void set_listener(IDrinkListener * listener) { listener_ = listener; };
+  inline void set_wait(bool wait) { wait_ = wait; };
   void start();
   void quit();
 
@@ -73,6 +74,9 @@ private:
   bottle_state state_;
   bottle_state_map_t bottles_;
   std::mutex bottles_lock_;
+
+  bool wait_;
+  std::chrono::system_clock::time_point end_tranquil_;
 
   IDrinkListener * listener_;
 

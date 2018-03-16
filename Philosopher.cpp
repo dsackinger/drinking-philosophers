@@ -14,11 +14,17 @@
 
 #include <vector>
 
+static constexpr auto tranquil_min(std::chrono::milliseconds(5));
+static constexpr auto tranquil_max(std::chrono::milliseconds(25));
+static constexpr auto tranquil_range(tranquil_max - tranquil_min);
+
 // Start all philosophers in state of tranquil
 Philosopher::Philosopher(int id, Logger& log, IDrinkListener * listener)
   : id_(id)
   , state_(tranquil)
   , bottles_()
+  , wait_(false)
+  , end_tranquil_(std::chrono::system_clock::now())
   , listener_(listener)
   , log_(log)
   , quit_(false)
@@ -152,14 +158,9 @@ bool Philosopher::has_request(int id)
 // State machine functions
 void Philosopher::on_tranquil()
 {
-  // Normally, we would have a timed operation here that
-  // takes a consistent time to complete.  For now, lets just
-  // yield to make sure other threads get a chance and then let
-  // the transition to thirsty take place.
-
-  // If we were going to wait a longer time, we would need to
-  // service the check_bottle_requests().  Ideally,
-  // check_bottle_requests() would be on a background thread.
+  // See if it is time to become thirsty again
+  if (std::chrono::system_clock::now() < end_tranquil_)
+    return;
 
   // Transition to being thirsty
   state_ = thirsty;
@@ -231,6 +232,15 @@ void Philosopher::on_thirsty()
 
   // We have all bottles.  Move to a drinking state
   state_ = drinking;
+
+  // If we wait after drinking, pick the time
+  if (wait_)
+  {
+    // Pick a random time to become tranquil again
+    auto range = std::chrono::duration_cast<std::chrono::milliseconds>(tranquil_range).count();
+    auto wait_millis = std::rand() % range;
+    end_tranquil_ = std::chrono::system_clock::now() + tranquil_min + std::chrono::milliseconds(wait_millis);
+  }
 }
 
 void Philosopher::on_drinking()
@@ -246,7 +256,8 @@ void Philosopher::on_drinking()
     std::unique_lock<std::mutex> lock(bottles_lock_);
 
     // We no longer need any of the bottles as we have finished our drinking
-    // Make sure to clean any forks as we are done drinking
+    // Make sure to mark our forks as dirty as we don't get the priority
+    // until we are passed over again.
     for (auto& entry : bottles_)
     {
       auto& bottle = entry.second;
