@@ -12,6 +12,7 @@
 
 #include "Philosopher.h"
 
+#include <functional>
 #include <vector>
 
 static constexpr auto tranquil_min(std::chrono::milliseconds(5));
